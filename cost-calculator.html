@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost of Cash Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl bg-white rounded-xl card-shadow overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gray-800 p-6">
+            <h1 class="text-2xl font-bold text-white text-center">Cost of Cash Calculator</h1>
+            <p class="text-gray-300 text-center mt-2">Estimate the financial impact of changing invoice payment terms.</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="p-6 md:p-8">
+            <!-- Input Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Invoice Amount -->
+                <div>
+                    <label for="invoiceAmount" class="block text-sm font-medium text-gray-700 mb-1">Invoice Amount (£)</label>
+                    <input type="number" id="invoiceAmount" placeholder="e.g., 50000" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
+                <!-- Annual Interest Rate -->
+                <div>
+                    <label for="interestRate" class="block text-sm font-medium text-gray-700 mb-1">Annual Interest Rate (%)</label>
+                    <input type="number" id="interestRate" placeholder="e.g., 5" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
+                <!-- Current Payment Terms -->
+                <div>
+                    <label for="currentTerms" class="block text-sm font-medium text-gray-700 mb-1">Current Payment Terms (Days)</label>
+                    <input type="number" id="currentTerms" placeholder="e.g., 30" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
+                <!-- New Payment Terms -->
+                <div>
+                    <label for="newTerms" class="block text-sm font-medium text-gray-700 mb-1">New Payment Terms (Days)</label>
+                    <input type="number" id="newTerms" placeholder="e.g., 60" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
+            </div>
+
+            <!-- Calculate Button -->
+            <div class="mt-8">
+                <button id="calculateBtn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Calculate
+                </button>
+            </div>
+
+            <!-- Error Message Area -->
+            <div id="error-message" class="mt-4 text-center text-red-600 font-medium"></div>
+
+            <!-- Results Section -->
+            <div id="results" class="mt-8 pt-6 border-t border-gray-200 text-center hidden">
+                <h2 id="result-title" class="text-lg font-semibold text-gray-800 mb-2">Potential Interest Earned</h2>
+                <p id="result-value" class="text-4xl font-bold text-indigo-600 mb-4">£0.00</p>
+                <p id="result-explanation" class="text-gray-600 max-w-prose mx-auto">This is the estimated interest you could earn by holding onto your cash for the additional payment period.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const invoiceAmountEl = document.getElementById('invoiceAmount');
+        const interestRateEl = document.getElementById('interestRate');
+        const currentTermsEl = document.getElementById('currentTerms');
+        const newTermsEl = document.getElementById('newTerms');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resultsEl = document.getElementById('results');
+        const resultTitleEl = document.getElementById('result-title');
+        const resultValueEl = document.getElementById('result-value');
+        const resultExplanationEl = document.getElementById('result-explanation');
+        const errorMessageEl = document.getElementById('error-message');
+
+        calculateBtn.addEventListener('click', calculateCostOfCash);
+
+        function calculateCostOfCash() {
+            resultsEl.classList.add('hidden');
+            errorMessageEl.textContent = '';
+
+            const invoiceAmount = parseFloat(invoiceAmountEl.value);
+            const interestRate = parseFloat(interestRateEl.value);
+            const currentTerms = parseInt(currentTermsEl.value, 10);
+            const newTerms = parseInt(newTermsEl.value, 10);
+
+            if (isNaN(invoiceAmount) || isNaN(interestRate) || isNaN(currentTerms) || isNaN(newTerms)) {
+                showError('Please fill in all fields with valid numbers.');
+                return;
+            }
+            if (invoiceAmount <= 0 || interestRate < 0 || currentTerms < 0 || newTerms < 0) {
+                showError('Please enter positive values. Interest rate cannot be negative.');
+                return;
+            }
+
+            const termDifference = newTerms - currentTerms;
+            const dailyInterestRate = (interestRate / 100) / 365;
+            const interestImpact = invoiceAmount * dailyInterestRate * termDifference;
+
+            updateUI(interestImpact, termDifference);
+        }
+
+        function updateUI(interestImpact, termDifference) {
+            const formattedResult = new Intl.NumberFormat('en-GB', {
+                style: 'currency',
+                currency: 'GBP'
+            }).format(Math.abs(interestImpact));
+
+            resultValueEl.textContent = formattedResult;
+
+            if (termDifference > 0) {
+                resultTitleEl.textContent = 'Potential Interest Earned';
+                resultValueEl.classList.remove('text-red-600');
+                resultValueEl.classList.add('text-indigo-600');
+                resultExplanationEl.textContent = `By extending payment terms by ${termDifference} days, you could potentially earn this amount by investing the cash instead.`;
+            } else if (termDifference < 0) {
+                resultTitleEl.textContent = 'Potential Cost of Early Payment';
+                resultValueEl.classList.remove('text-indigo-600');
+                resultValueEl.classList.add('text-red-600');
+                resultExplanationEl.textContent = `By paying ${Math.abs(termDifference)} days earlier, you would forgo the opportunity to earn this amount in interest.`;
+            } else {
+                resultTitleEl.textContent = 'No Financial Impact';
+                resultValueEl.classList.remove('text-red-600');
+                resultValueEl.classList.add('text-indigo-600');
+                resultExplanationEl.textContent = 'The payment terms are unchanged, resulting in no difference in interest earned or lost.';
+            }
+
+            resultsEl.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            errorMessageEl.textContent = message;
+        }
+    </script>
+</body>
+</html>
